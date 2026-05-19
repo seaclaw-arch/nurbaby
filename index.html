@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#10B981">
+    <meta name="description" content="NurBaby - Aplikasi Parenting Islami">
+    <title>NurBaby 🌙 - Parenting Islami</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FFFBEB',
+                        emerald: {
+                            50: '#ECFDF5', 100: '#D1FAE5', 200: '#A7F3D0',
+                            300: '#6EE7B7', 400: '#34D399', 500: '#10B981',
+                            600: '#059669', 700: '#047857', 800: '#065F46', 900: '#064E3B',
+                        }
+                    },
+                    animation: {
+                        slideUp: 'slideUp 0.3s ease-out',
+                        slideDown: 'slideDown 0.5s ease-out',
+                        fadeIn: 'fadeIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-100px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif; 
+            background: #FFFBEB; 
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #10B981, #14B8A6);
+            color: white; font-weight: 600; padding: 12px 24px;
+            border-radius: 16px; border: none; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+        .btn-primary:active { transform: scale(0.95); }
+        
+        .btn-secondary {
+            background: white; color: #059669; font-weight: 500;
+            padding: 8px 16px; border-radius: 12px;
+            border: 2px solid #A7F3D0; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: #ECFDF5; }
+        
+        .btn-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px; border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+            font-size: 20px;
+        }
+        
+        .card {
+            background: white; border-radius: 16px; padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #F1F5F9;
+            transition: all 0.2s;
+        }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        .input-field {
+            width: 100%; padding: 12px 16px; border-radius: 12px;
+            border: 1px solid #E2E8F0; font-size: 14px; outline: none;
+            transition: all 0.2s;
+        }
+        .input-field:focus { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: flex-end; justify-content: center;
+            z-index: 1000; padding: 16px;
+            animation: fadeIn 0.2s;
+        }
+        @media (min-width: 640px) {
+            .modal-overlay { align-items: center; }
+        }
+        
+        .modal-content {
+            background: white; border-radius: 24px 24px 0 0;
+            width: 100%; max-width: 448px; max-height: 80vh;
+            overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
+        @media (min-width: 640px) {
+            .modal-content { border-radius: 24px; }
+        }
+        
+        .toast-bubble {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; max-width: 400px; width: 90%;
+            background: linear-gradient(135deg, #ECFDF5, #F0FDFA);
+            border: 2px solid #A7F3D0; border-radius: 16px;
+            padding: 16px; box-shadow: 0 10px 40px rgba(16,185,129,0.2);
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        .badge {
+            display: inline-block; padding: 4px 12px;
+            border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .badge-success { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+        .badge-warning { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+        .badge-info { background: #EFF6FF; color: #0C2340; border: 1px solid #BFDBFE; }
+        
+        .activity-btn {
+            flex-direction: column; align-items: center; gap: 8px;
+            padding: 12px 8px; border-radius: 12px;
+            border: 2px solid transparent; cursor: pointer;
+            transition: all 0.2s; background: transparent;
+        }
+        .activity-btn:hover { background: #F0FDFA; border-color: #A7F3D0; }
+        .activity-btn:active { transform: scale(0.9); }
+        
+        .stat-card {
+            border-radius: 12px; padding: 12px;
+            text-align: center; background: linear-gradient(135deg, #ECFDF5, #F0FDFA);
+            border: 1px solid #A7F3D0;
+        }
+        
+        .timeline-item {
+            position: relative; padding-left: 32px; margin-bottom: 12px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute; left: 8px; top: 6px;
+            width: 8px; height: 8px; background: #10B981;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="bg-cream min-h-screen">
+
+<div id="app"></div>
+
+<script>
+// ============================================
+// SUPABASE CONFIG
+// ============================================
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================
+// ACTIVITY TYPES
+// ============================================
+const ACTIVITY_TYPES = {
+    // Feeding
+    menyusui: { label: 'Menyusui', icon: '🤱', color: 'emerald', category: 'feeding' },
+    sufor: { label: 'Sufor', icon: '🍼', color: 'sky', category: 'feeding' },
+    mpasi: { label: 'MPASI', icon: '🥣', color: 'amber', category: 'feeding' },
+    
+    // Diapers
+    popok_basah: { label: 'Popok Basah', icon: '💧', color: 'blue', category: 'diaper' },
+    popok_kotor: { label: 'Popok Kotor', icon: '💩', color: 'yellow', category: 'diaper' },
+    
+    // Sleep
+    tidur_siang: { label: 'Tidur Siang', icon: '😴', color: 'indigo', category: 'sleep' },
+    tidur_malam: { label: 'Tidur Malam', icon: '🌙', color: 'purple', category: 'sleep' },
+    bangun: { label: 'Bangun', icon: '☀️', color: 'yellow', category: 'sleep' },
+    
+    // Care
+    mandi: { label: 'Mandi', icon: '🛁', color: 'cyan', category: 'care' },
+    ganti_baju: { label: 'Ganti Baju', icon: '👕', color: 'pink', category: 'care' },
+    
+    // Health
+    obat: { label: 'Obat', icon: '💊', color: 'red', category: 'health' },
+    vaksin: { label: 'Vaksin', icon: '💉', color: 'rose', category: 'health' },
+    timbang: { label: 'Timbang', icon: '⚖️', color: 'orange', category: 'health' },
+    ukur: { label: 'Ukur Tinggi', icon: '📏', color: 'orange', category: 'health' },
+    
+    // Activities
+    bermain: { label: 'Bermain', icon: '🎮', color: 'fuchsia', category: 'activity' },
+    ngaji: { label: 'Ngaji', icon: '📖', color: 'green', category: 'activity' },
+    tummy_time: { label: 'Tummy Time', icon: '🤸', color: 'violet', category: 'activity' },
+};
+
+// ============================================
+// APP STATE
+// ============================================
+const state = {
+    user: null,
+    profile: null,
+    children: [],
+    selectedChild: null,
+    activities: [],
+    currentPage: 'dashboard',
+    showModal: false,
+    modalContent: null,
+    timeRange: 'today', // today, week, month
+    loading: false,
+};
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function render(html) {
+    document.getElementById('app').innerHTML = html;
+    setTimeout(() => lucide.createIcons(), 100);
+}
+
+function showToast(title, message, type = 'info') {
+    const icons = {
+        success: '✅',
+        error: '❌',
+        info: '💬',
+        warning: '⚠️'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-bubble';
+    toast.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="text-2xl">${icons[type]}</div>
+            <div class="flex-1">
+                <div class="font-semibold text-sm">${title}</div>
+                ${message ? `<div class="text-sm mt-1 opacity-80">${message}</div>` : ''}
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-lg opacity-50 hover:opacity-100">×</button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+function showModal(content) {
+    state.modalContent = content;
+    state.showModal = true;
+    renderApp();
+}
+
+function hideModal() {
+    state.showModal = false;
+    state.modalContent = null;
+    renderApp();
+}
+
+function getChildAge() {
+    if (!state.selectedChild?.birth_date) return 0;
+    const birth = new Date(state.selectedChild.birth_date);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const month = today.getMonth() - birth.getMonth();
+    if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+}
+
+function getChildAgeMonths() {
+    if (!state.selectedChild?.birth_date) return 0;
+    const birth = new Date(state.selectedChild.birth_date);
+    const today = new Date();
+    return (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
+}
+
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('id-ID', { 
+        weekday: 'short', 
+        day: '2-digit',
+        month: 'short'
+    });
+}
+
+function formatTime(date) {
+    return new Date(date).toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit'
+    });
+}
+
+function getDateRange(range) {
+    const today = new Date();
+    const start = new Date();
+    
+    if (range === 'today') {
+        start.setDate(today.getDate());
+    } else if (range === 'week') {
+        start.setDate(today.getDate() - today.getDay());
+    } else if (range === 'month') {
+        start.setDate(1);
+    }
+    
+    start.setHours(0, 0, 0, 0);
+    return start.toISOString().split('T')[0];
+}
+
+function calculateStats() {
+    const stats = {};
+    state.activities.forEach(activity => {
+        stats[activity.type] = (stats[activity.type] || 0) + 1;
+    });
+    return stats;
+}
+
+// ============================================
+// AUTH FUNCTIONS
+// ============================================
+async function signUp(email, password, fullName, role) {
+    try {
+        state.loading = true;
+        const { data, error } = await supabase.auth.signUp({
+            email, password,
+            options: { data: { full_name: fullName, role } }
+        });
+        if (error) throw error;
+        
+        const pairingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{ 
+                id: data.user.id, 
+                full_name: fullName, 
+                role,
+                pairing_code: pairingCode
+            }]);
+        
+        if (profileError) throw profileError;
+        
+        showToast('Berhasil!', 'Silakan cek email untuk verifikasi', 'success');
+        navigateTo('login');
+    } catch (error) {
+        showToast('Gagal', error.message, 'error');
+    } finally {
+        state.loading = false;
+    }
+}
+
+async function signIn(email, password) {
+    try {
+        state.loading = true;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        
+        state.user = data.user;
+        await fetchProfile();
+        navigateTo('dashboard');
+    } catch (error) {
+        showToast('Login Gagal', error.message, 'error');
+    } finally {
+        state.loading = false;
+    }
+}
+
+async function signOut() {
+    await supabase.auth.signOut();
+    state.user = null;
+    state.profile = null;
+    state.children = [];
+    state.activities = [];
+    navigateTo('login');
+}
+
+async function fetchProfile() {
+    if (!state.user) return;
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*, partner:partner_id(full_name, role)')
+            .eq('id', state.user.id)
+            .single();
+        
+        if (!error && data) state.profile = data;
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+    }
+}
+
+async function pairWithPartner(code) {
+    try {
+        state.loading = true;
+        const { data: partner, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('pairing_code', code.toUpperCase())
+            .single();
+        
+        if (error || !partner) throw new Error('Kode pairing tidak ditemukan');
+        if (partner.role === state.profile.role) throw new Error('Role harus berbeda (Ibu ≠ Ayah)');
+        if (partner.partner_id) throw new Error('Akun ini sudah berpasangan');
+        
+        await supabase.from('profiles').update({ partner_id: partner.id }).eq('id', state.user.id);
+        await supabase.from('profiles').update({ partner_id: state.user.id }).eq('id', partner.id);
+        
+        await fetchProfile();
+        showToast('Berhasil!', 'Terhubung dengan pasangan 💑', 'success');
+        navigateTo('dashboard');
+    } catch (error) {
+        showToast('Gagal', error.message, 'error');
+    } finally {
+        state.loading = false;
+    }
+}
+
+// ============================================
+// DATA FUNCTIONS
+// ============================================
+async function fetchChildren() {
+    if (!state.profile) return;
+    try {
+        const { data } = await supabase
+            .from('children')
+            .select('*')
+            .or(`parent_ibu.eq.${state.profile.id},parent_ayah.eq.${state.profile.id}`)
+            .order('birth_date', { ascending: false });
+        
+        state.children = data || [];
+        if (state.children.length > 0 && !state.selectedChild) {
+            state.selectedChild = state.children[0];
+        }
+    } catch (error) {
+        console.error('Error fetching children:', error);
+    }
+}
+
+async function fetchActivities() {
+    if (!state.selectedChild) return;
+    
+    try {
+        const startDate = getDateRange(state.timeRange);
+        const { data } = await supabase
+            .from('activities')
+            .select('*, done_by_profile:done_by(full_name)')
+            .eq('child_id', state.selectedChild.id)
+            .gte('created_at', startDate)
+            .order('created_at', { ascending: false });
+        
+        state.activities = data || [];
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+    }
+}
+
+async function addActivity(type, note = '') {
+    try {
+        const { error } = await supabase
+            .from('activities')
+            .insert([{
+                child_id: state.selectedChild.id,
+                type,
+                note,
+                done_by: state.user.id,
+            }]);
+        
+        if (error) throw error;
+        
+        showToast('Tercatat! 🌟', ACTIVITY_TYPES[type]?.label || type, 'success');
+        await fetchActivities();
+        renderApp();
+    } catch (error) {
+        showToast('Gagal', error.message, 'error');
+    }
+}
+
+async function deleteActivity(activityId) {
+    try {
+        const { error } = await supabase
+            .from('activities')
+            .delete()
+            .eq('id', activityId);
+        
+        if (error) throw error;
+        
+        showToast('Dihapus', '', 'info');
+        await fetchActivities();
+        renderApp();
+    } catch (error) {
+        showToast('Gagal', error.message, 'error');
+    }
+}
+
+async function addChild(name, birthDate, gender) {
+    try {
+        state.loading = true;
+        const { error } = await supabase
+            .from('children')
+            .insert([{
+                name,
+                birth_date: birthDate,
+                gender,
+                parent_ibu: state.profile.role === 'ibu' ? state.user.id : state.profile.partner_id,
+                parent_ayah: state.profile.role === 'ayah' ? state.user.id : state.profile.partner_id
+            }]);
+        
+        if (error) throw error;
+        
+        showToast('Berhasil!', `${name} telah ditambahkan`, 'success');
+        hideModal();
+        await fetchChildren();
+        await fetchActivities();
+        renderApp();
+    } catch (error) {
+        showToast('Gagal', error.message, 'error');
+    } finally {
+        state.loading = false;
+    }
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function navigateTo(page) {
+    state.currentPage = page;
+    if (page === 'dashboard') {
+        fetchProfile().then(() => {
+            fetchChildren().then(() => {
+                fetchActivities().then(() => renderApp());
+            });
+        });
+    } else {
+        renderApp();
+    }
+}
+
+// ============================================
+// RENDER PAGES
+// ============================================
+function renderLoginPage() {
+    return `
+    <div class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 to-cream">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="text-7xl mb-4">🌙</div>
+                <h1 class="text-4xl font-bold text-slate-800 mb-2">NurBaby</h1>
+                <p class="text-slate-500 text-lg">Parenting Islami untuk Si Kecil</p>
+            </div>
+            
+            <div class="card space-y-4">
+                <h2 class="text-xl font-semibold text-slate-700">Masuk Akun</h2>
+                <form id="loginForm" onsubmit="event.preventDefault(); handleLogin()">
+                    <div class="space-y-3">
+                        <input type="email" id="loginEmail" placeholder="Email" class="input-field" required>
+                        <input type="password" id="loginPassword" placeholder="Password" class="input-field" required>
+                        <button type="submit" class="btn-primary w-full" ${state.loading ? 'disabled' : ''}>
+                            ${state.loading ? '⏳ Memproses...' : 'Masuk'}
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center text-sm text-slate-500">
+                    Belum punya akun? 
+                    <button onclick="navigateTo('register')" class="text-emerald-600 font-semibold hover:underline">Daftar</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderRegisterPage() {
+    return `
+    <div class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 to-cream">
+        <div class="w-full max-w-md">
+            <button onclick="navigateTo('login')" class="text-slate-400 mb-6 flex items-center gap-1">
+                ← Kembali
+            </button>
+            <div class="text-center mb-8">
+                <div class="text-7xl mb-4">👶</div>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">Daftar NurBaby</h1>
+                <p class="text-slate-500">Mulai perjalanan parenting islami</p>
+            </div>
+            
+            <div class="card space-y-4">
+                <h2 class="text-xl font-semibold text-slate-700">Buat Akun Baru</h2>
+                <form onsubmit="event.preventDefault(); handleRegister()">
+                    <div class="space-y-3">
+                        <input type="text" id="regName" placeholder="Nama Lengkap" class="input-field" required>
+                        <input type="email" id="regEmail" placeholder="Email" class="input-field" required>
+                        <input type="password" id="regPassword" placeholder="Password (min 6 karakter)" class="input-field" required minlength="6">
+                        <select id="regRole" class="input-field" required>
+                            <option value="">Pilih Peran Anda</option>
+                            <option value="ibu">🤱 Ibu</option>
+                            <option value="ayah">👨‍👧 Ayah</option>
+                        </select>
+                        <button type="submit" class="btn-primary w-full" ${state.loading ? 'disabled' : ''}>
+                            ${state.loading ? '⏳ Memproses...' : 'Daftar'}
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center text-sm text-slate-500">
+                    Sudah punya akun? 
+                    <button onclick="navigateTo('login')" class="text-emerald-600 font-semibold hover:underline">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderDashboardPage() {
+    const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const stats = calculateStats();
+    const ageMonths = getChildAgeMonths();
+
+    let html = `
+    <div class="max-w-2xl mx-auto min-h-screen pb-24 px-4">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100 rounded-b-3xl -mx-4 px-4 py-6 sticky top-0 z-10 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">🌙 NurBaby</h1>
+                    <p class="text-xs text-slate-500">${today}</p>
+                </div>
+                <div class="flex gap-2">
+                    <span class="badge ${state.profile?.partner ? 'badge-success' : 'badge-warning'}">
+                        ${state.profile?.partner ? '✅ Connected' : '⚠️ Solo'}
+                    </span>
+                    <button onclick="navigateTo('settings')" class="btn-icon bg-white hover:bg-slate-100">⚙️</button>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 font-medium">
+                ${state.profile?.role === 'ibu' ? '🤱 Ibu' : '👨‍👧 Ayah'} ${state.profile?.full_name || ''}
+                ${state.profile?.partner ? ` & ${state.profile.partner.role === 'ibu' ? '🤱 Ibu' : '👨‍👧 Ayah'} ${state.profile.partner.full_name}` : ''}
+            </p>
+        </div>
+
+        <div class="space-y-4 py-4">`;
+
+    if (state.children.length === 0) {
+        html += `
+            <div class="text-center py-20">
+                <div class="text-6xl mb-6">👶</div>
+                <h2 class="text-2xl font-semibold text-slate-700 mb-2">Selamat Datang!</h2>
+                <p class="text-slate-500 mb-6">Tambahkan data si kecil untuk memulai tracking</p>
+                <button class="btn-primary" onclick="showModal('addChild')">➕ Tambah Anak Pertama</button>
+            </div>`;
+    } else {
+        // Child Selector & Info
+        if (state.children.length > 1) {
+            html += `
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    ${state.children.map(child => `
+                        <button onclick="state.selectedChild = state.children.find(c => c.id === '${child.id}'); state.timeRange = 'today'; fetchActivities(); renderApp();"
+                            class="px-4 py-2 rounded-full text-sm whitespace-nowrap font-medium transition-all
+                            ${state.selectedChild?.id === child.id 
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg' 
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            ${child.name}
+                        </button>
+                    `).join('')}
+                </div>`;
+        }
+
+        // Child Info Card
+        html += `
+            <div class="card bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">${state.selectedChild?.name || 'Si Kecil'}</h3>
+                        <p class="text-sm text-slate-600 mt-1">
+                            ${state.selectedChild?.gender === 'boy' ? '👦' : '👧'} 
+                            ${ageMonths} bulan
+                            ${state.selectedChild?.birth_date ? `(${new Date(state.selectedChild.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})` : ''}
+                        </p>
+                    </div>
+                    <button onclick="showModal('addChild')" class="btn-icon bg-emerald-200 hover:bg-emerald-300">➕</button>
+                </div>
+            </div>`;
+
+        // Activity Quick Buttons
+        html += `
+            <div class="card">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3">⚡ Quick Tracker</h3>
+                <div class="grid grid-cols-4 gap-2">
+                    ${[
+                        'menyusui', 'sufor', 'popok_basah', 'tidur_siang',
+                        'mandi', 'obat', 'timbang', 'bermain'
+                    ].map(type => `
+                        <button onclick="addActivity('${type}')" 
+                            class="activity-btn flex"
+                            title="${ACTIVITY_TYPES[type]?.label}">
+                            <span class="text-3xl">${ACTIVITY_TYPES[type]?.icon}</span>
+                            <span class="text-xs text-slate-600 font-medium">${ACTIVITY_TYPES[type]?.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>`;
+
+        // Time Range Filter
+        html += `
+            <div class="flex gap-2 justify-center">
+                ${['today', 'week', 'month'].map(range => `
+                    <button onclick="state.timeRange = '${range}'; fetchActivities(); renderApp();"
+                        class="px-4 py-2 rounded-full text-sm font-medium transition-all
+                        ${state.timeRange === range 
+                            ? 'bg-emerald-500 text-white shadow-lg' 
+                            : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'}">
+                        ${range === 'today' ? 'Hari Ini' : range === 'week' ? 'Minggu Ini' : 'Bulan Ini'}
+                    </button>
+                `).join('')}
+            </div>`;
+
+        // Stats Summary
+        html += `
+            <div class="card">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3">📊 Ringkasan</h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="stat-card">
+                        <div class="text-2xl font-bold text-emerald-700">${state.activities.length}</div>
+                        <div class="text-xs text-emerald-600 font-medium">Total Aktivitas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-2xl font-bold text-amber-700">${Object.keys(stats).length}</div>
+                        <div class="text-xs text-amber-600 font-medium">Tipe Aktivitas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-2xl font-bold text-indigo-700">${Math.round(state.activities.length / Math.max(1, Object.keys(stats).length))}</div>
+                        <div class="text-xs text-indigo-600 font-medium">Rata-rata</div>
+                    </div>
+                </div>
+            </div>`;
+
+        // Activities Timeline
+        html += `
+            <div>
+                <h3 class="text-sm font-semibold text-slate-600 mb-3">📝 Timeline Aktivitas</h3>
+                ${state.activities.length === 0 ? `
+                    <div class="card text-center py-12 bg-gradient-to-br from-slate-50 to-slate-100">
+                        <div class="text-5xl mb-3">📋</div>
+                        <p class="text-slate-500 font-medium">Belum ada aktivitas</p>
+                        <p class="text-xs text-slate-400 mt-1">Gunakan Quick Tracker di atas untuk mencatat</p>
+                    </div>` : 
+                    state.activities.map(a => {
+                        const type = ACTIVITY_TYPES[a.type];
+                        return `
+                        <div class="card mb-2 hover:shadow-md transition-all">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3 flex-1">
+                                    <span class="text-2xl">${type?.icon || '📌'}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-semibold text-slate-700">${type?.label || a.type}</span>
+                                            <span class="text-xs text-slate-400 font-medium">${formatTime(a.created_at)}</span>
+                                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">oleh ${a.done_by_profile?.full_name || 'Anda'}</span>
+                                        </div>
+                                        ${a.note ? `<p class="text-sm text-slate-600 mt-2 italic">💬 "${a.note}"</p>` : ''}
+                                    </div>
+                                </div>
+                                <button onclick="deleteActivity('${a.id}')" class="text-slate-300 hover:text-red-500 transition-colors text-xl">×</button>
+                            </div>
+                        </div>`;
+                    }).join('')
+                }
+            </div>`;
+    }
+
+    html += `
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
+            <div class="max-w-2xl mx-auto px-4 py-2 flex justify-around">
+                <button onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 py-3 ${state.currentPage === 'dashboard' ? 'text-emerald-600' : 'text-slate-400'}">
+                    <span class="text-2xl">🏠</span>
+                    <span class="text-xs font-medium">Beranda</span>
+                </button>
+                <button onclick="showModal('addChild')" class="flex flex-col items-center gap-1 py-3 text-slate-400 hover:text-emerald-600">
+                    <span class="text-2xl">➕</span>
+                    <span class="text-xs font-medium">Anak</span>
+                </button>
+                <button onclick="navigateTo('analytics')" class="flex flex-col items-center gap-1 py-3 ${state.currentPage === 'analytics' ? 'text-emerald-600' : 'text-slate-400'}">
+                    <span class="text-2xl">📊</span>
+                    <span class="text-xs font-medium">Analytics</span>
+                </button>
+                <button onclick="navigateTo('doa')" class="flex flex-col items-center gap-1 py-3 ${state.currentPage === 'doa' ? 'text-emerald-600' : 'text-slate-400'}">
+                    <span class="text-2xl">📿</span>
+                    <span class="text-xs font-medium">Doa</span>
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+function renderAnalyticsPage() {
+    const stats = calculateStats();
+    const totalActivities = state.activities.length;
+
+    let html = `
+    <div class="max-w-2xl mx-auto min-h-screen pb-24 px-4">
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100 rounded-b-3xl -mx-4 px-4 py-6 sticky top-0 z-10 shadow-sm">
+            <button onclick="navigateTo('dashboard')" class="text-slate-400 mb-2 flex items-center gap-1">← Kembali</button>
+            <h1 class="text-2xl font-bold text-slate-800">📊 Analytics</h1>
+        </div>
+
+        <div class="space-y-4 py-4">
+            <div class="card">
+                <h3 class="text-sm font-semibold text-slate-600 mb-4">📈 Distribusi Aktivitas</h3>
+                <div class="space-y-3">
+                    ${Object.entries(stats)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 10)
+                        .map(([type, count]) => {
+                            const percentage = Math.round((count / totalActivities) * 100);
+                            const actInfo = ACTIVITY_TYPES[type];
+                            return `
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-medium text-slate-700">
+                                        <span class="text-lg mr-2">${actInfo?.icon || '📌'}</span>${actInfo?.label || type}
+                                    </span>
+                                    <span class="text-sm font-bold text-emerald-600">${count}x (${percentage}%)</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-emerald-400 to-teal-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="card">
+                    <div class="text-4xl font-bold text-emerald-600">${totalActivities}</div>
+                    <div class="text-sm text-slate-600 mt-1">Total Aktivitas</div>
+                </div>
+                <div class="card">
+                    <div class="text-4xl font-bold text-amber-600">${Object.keys(stats).length}</div>
+                    <div class="text-sm text-slate-600 mt-1">Jenis Aktivitas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
+            <div class="max-w-2xl mx-auto px-4 py-2 flex justify-around">
+                <button onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 py-3 text-slate-400">
+                    <span class="text-2xl">🏠</span>
+                    <span class="text-xs font-medium">Beranda</span>
+                </button>
+                <button onclick="navigateTo('analytics')" class="flex flex-col items-center gap-1 py-3 text-emerald-600">
+                    <span class="text-2xl">📊</span>
+                    <span class="text-xs font-medium">Analytics</span>
+                </button>
+                <button onclick="navigateTo('doa')" class="flex flex-col items-center gap-1 py-3 text-slate-400">
+                    <span class="text-2xl">📿</span>
+                    <span class="text-xs font-medium">Doa</span>
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+function renderDoaPage() {
+    const doaList = [
+        { title: 'Doa Menyusui', icon: '🤱', arabic: 'بِسْمِ اللّٰهِ الَّذِيْ لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ', latin: 'Bismillāhilladzī lā yadhurru mā\'a asmihī shay\'u fis-samāi wa lā fil-ardh', arti: 'Dengan nama Allah yang dengan nama-Nya tidak ada sesuatu pun yang membahayakan di langit dan di bumi' },
+        { title: 'Doa Menidurkan Bayi', icon: '😴', arabic: 'بِاسْمِكَ اللّٰهُمَّ أَحْيَا وَأَمُوْتُ', latin: 'Bismika Allāhumma ahyā wa amūt', arti: 'Dengan nama-Mu ya Allah, aku hidup dan aku mati' },
+        { title: 'Doa Bangun Tidur', icon: '☀️', arabic: 'اَلْحَمْدُ لِلّٰهِ الَّذِيْ أَحْيَانَا بَعْدَ مَا أَمَاتَنَا', latin: 'Alhamdulillāhilladzī ahyānā ba\'da mā amātanā wa ilaihi an-nushūr', arti: 'Segala puji bagi Allah yang telah menghidupkan kami setelah mematikan kami dan kepada-Nya pengembalian' },
+        { title: 'Doa untuk Anak', icon: '👶', arabic: 'رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا', latin: 'Rabbanā hab lanā min azwājinā wa dzurriyātinā qurrata a\'yun', arti: 'Ya Tuhan kami, anugerahkanlah kepada kami penyejuk mata dari pasangan dan keturunan kami' },
+        { title: 'Doa Perlindungan Anak', icon: '🛡️', arabic: 'أُعِيْذُكَ بِكَلِمَاتِ اللّٰهِ التَّامَّةِ', latin: 'U\'īdzuka bikalimātillāhit-tāmmah min kulli shaitānin wa hāmmah', arti: 'Aku lindungi kamu dengan kalimat-kalimat Allah yang sempurna dari setiap setan dan hewan berbisa' },
+    ];
+
+    return `
+    <div class="max-w-2xl mx-auto min-h-screen pb-24 px-4">
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100 rounded-b-3xl -mx-4 px-4 py-6 sticky top-0 z-10 shadow-sm">
+            <button onclick="navigateTo('dashboard')" class="text-slate-400 mb-2 flex items-center gap-1">← Kembali</button>
+            <h1 class="text-2xl font-bold text-slate-800">📿 Doa Harian</h1>
+        </div>
+
+        <div class="space-y-4 py-4">
+            ${doaList.map((d, idx) => `
+                <div class="card border-2 border-emerald-100 hover:shadow-lg transition-all">
+                    <div class="flex items-start gap-3 mb-3">
+                        <span class="text-3xl">${d.icon}</span>
+                        <h3 class="font-bold text-emerald-700">${d.title}</h3>
+                    </div>
+                    <p class="text-xl font-semibold text-right mb-2 leading-relaxed text-slate-800" style="font-family: 'Amiri', 'Scheherazade', serif; direction: rtl;">${d.arabic}</p>
+                    <p class="text-sm text-emerald-600 italic mb-2 font-medium">${d.latin}</p>
+                    <p class="text-sm text-slate-600 leading-relaxed">"${d.arti}"</p>
+                </div>
+            `).join('')}
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
+            <div class="max-w-2xl mx-auto px-4 py-2 flex justify-around">
+                <button onclick="navigateTo('dashboard')" class="flex flex-col items-center gap-1 py-3 text-slate-400">
+                    <span class="text-2xl">🏠</span>
+                    <span class="text-xs font-medium">Beranda</span>
+                </button>
+                <button onclick="navigateTo('analytics')" class="flex flex-col items-center gap-1 py-3 text-slate-400">
+                    <span class="text-2xl">📊</span>
+                    <span class="text-xs font-medium">Analytics</span>
+                </button>
+                <button onclick="navigateTo('doa')" class="flex flex-col items-center gap-1 py-3 text-emerald-600">
+                    <span class="text-2xl">📿</span>
+                    <span class="text-xs font-medium">Doa</span>
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderSettingsPage() {
+    return `
+    <div class="max-w-2xl mx-auto min-h-screen pb-24 px-4">
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100 rounded-b-3xl -mx-4 px-4 py-6 sticky top-0 z-10 shadow-sm">
+            <button onclick="navigateTo('dashboard')" class="text-slate-400 mb-2 flex items-center gap-1">← Kembali</button>
+            <h1 class="text-2xl font-bold text-slate-800">⚙️ Pengaturan</h1>
+        </div>
+
+        <div class="space-y-4 py-4">
+            <!-- Profile Info -->
+            <div class="card">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3">👤 Info Profil</h3>
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-xs text-slate-500">Nama</p>
+                        <p class="font-semibold text-slate-700">${state.profile?.full_name}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Role</p>
+                        <p class="font-semibold text-slate-700">${state.profile?.role === 'ibu' ? '🤱 Ibu' : '👨‍👧 Ayah'}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500">Email</p>
+                        <p class="font-semibold text-slate-700">${state.user?.email}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partnership -->
+            <div class="card">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3">💑 Pasangan</h3>
+                ${state.profile?.partner ? `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-slate-700">${state.profile.partner.full_name}</p>
+                            <p class="text-sm text-slate-500">${state.profile.partner.role === 'ibu' ? '🤱 Ibu' : '👨‍👧 Ayah'}</p>
+                        </div>
+                        <span class="badge badge-success">✅ Terhubung</span>
+                    </div>
+                ` : `
+                    <button onclick="navigateTo('pairing')" class="btn-primary w-full">
+                        💑 Hubungkan dengan Pasangan
+                    </button>
+                `}
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card border-2 border-red-200 bg-red-50">
+                <h3 class="text-sm font-semibold text-red-700 mb-3">🚪 Keluar Akun</h3>
+                <button onclick="if(confirm('Yakin ingin keluar?')) signOut()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg w-full transition-all">
+                    Keluar
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderPairingPage() {
+    return `
+    <div class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-md">
+            <button onclick="navigateTo('settings')" class="text-slate-400 mb-6 flex items-center gap-1">← Kembali</button>
+            <div class="text-center mb-6">
+                <div class="text-6xl mb-3">💑</div>
+                <h1 class="text-3xl font-bold text-slate-800">Hubungkan Pasangan</h1>
+                <p class="text-slate-500 text-sm mt-2">Masukkan kode pairing dari pasangan Anda</p>
+            </div>
+            
+            <div class="card">
+                <form onsubmit="event.preventDefault(); handlePairing()">
+                    <div class="mb-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p class="text-xs text-slate-600 mb-2">Kode Anda (6 digit, bagikan ke pasangan):</p>
+                        <div class="flex items-center gap-2">
+                            <div class="text-3xl font-bold text-emerald-600 tracking-widest">${state.profile?.pairing_code || 'XXXXX'}</div>
+                            <button type="button" onclick="navigator.clipboard.writeText('${state.profile?.pairing_code}'); showToast('Disalin!', 'Kode sudah disalin ke clipboard')" class="btn-icon bg-emerald-200 hover:bg-emerald-300">📋</button>
+                        </div>
+                    </div>
+                    <input type="text" id="pairingCode" placeholder="Masukkan kode pasangan" 
+                        class="input-field text-center text-2xl tracking-widest uppercase mb-4" 
+                        maxlength="6" required>
+                    <button type="submit" class="btn-primary w-full" ${state.loading ? 'disabled' : ''}>
+                        ${state.loading ? '⏳ Memproses...' : 'Hubungkan'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ============================================
+// MODALS
+// ============================================
+function renderAddChildModal() {
+    return `
+    <div class="modal-overlay" onclick="hideModal()">
+        <div class="modal-content p-6" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">➕ Tambah Anak</h2>
+                <button onclick="hideModal()" class="text-3xl hover:text-slate-400">×</button>
+            </div>
+            <form onsubmit="event.preventDefault(); handleAddChild()">
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm text-slate-600 font-medium">Nama Anak</label>
+                        <input type="text" id="childName" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-600 font-medium">Tanggal Lahir</label>
+                        <input type="date" id="childBirth" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-600 font-medium">Jenis Kelamin</label>
+                        <select id="childGender" class="input-field" required>
+                            <option value="">Pilih Jenis Kelamin</option>
+                            <option value="boy">👦 Laki-laki</option>
+                            <option value="girl">👧 Perempuan</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary w-full" ${state.loading ? 'disabled' : ''}>
+                        ${state.loading ? '⏳ Memproses...' : 'Simpan'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>`;
+}
+
+// ============================================
+// EVENT HANDLERS
+// ============================================
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    signIn(email, password);
+}
+
+function handleRegister() {
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    const role = document.getElementById('regRole').value;
+    signUp(email, password, name, role);
+}
+
+function handlePairing() {
+    const code = document.getElementById('pairingCode').value;
+    pairWithPartner(code);
+}
+
+function handleAddChild() {
+    const name = document.getElementById('childName').value;
+    const birth = document.getElementById('childBirth').value;
+    const gender = document.getElementById('childGender').value;
+    addChild(name, birth, gender);
+}
+
+// ============================================
+// MAIN RENDER
+// ============================================
+function renderApp() {
+    let html = '';
+    
+    if (!state.user) {
+        if (state.currentPage === 'register') {
+            html = renderRegisterPage();
+        } else {
+            html = renderLoginPage();
+        }
+    } else {
+        switch(state.currentPage) {
+            case 'analytics': html = renderAnalyticsPage(); break;
+            case 'doa': html = renderDoaPage(); break;
+            case 'settings': html = renderSettingsPage(); break;
+            case 'pairing': html = renderPairingPage(); break;
+            case 'dashboard':
+            default: html = renderDashboardPage(); break;
+        }
+    }
+    
+    if (state.showModal && state.modalContent === 'addChild') {
+        html += renderAddChildModal();
+    }
+    
+    render(html);
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+async function init() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            state.user = session.user;
+            await fetchProfile();
+            await fetchChildren();
+            if (state.selectedChild) await fetchActivities();
+        }
+    } catch (error) {
+        console.error('Error initializing:', error);
+    }
+    renderApp();
+    
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+            state.user = session.user;
+            await fetchProfile();
+            await fetchChildren();
+            if (state.selectedChild) await fetchActivities();
+        } else {
+            state.user = null;
+            state.profile = null;
+        }
+        renderApp();
+    });
+}
+
+init();
+console.log('🌙 NurBaby Started - Aplikasi Parenting Islami');
+</script>
+
+</body>
+</html>
