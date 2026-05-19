@@ -2,7 +2,7 @@
 const SUPABASE_URL = 'https://ycmbvotfmxijznonetpm.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_56wQ5Elt7GbQwZ2d2iS-cQ_69QvJYAo';
 
-// Inisialisasi Supabase Client
+// Inisialisasi Supabase Client (hanya 1 kali)
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -46,17 +46,9 @@ function setupEventListeners() {
     addChildBtn.addEventListener('click', () => {
         alert('Fitur tambah anak akan segera hadir!');
     });
-    
-    // Toggle between login and signup
-    authBtn.addEventListener('click', (e) => {
-        if (isSignUp) {
-            authBtn.textContent = 'Sign Up';
-            isSignUp = false;
-        }
-    });
 }
 
-// Handle authentication
+// Handle authentication (login/signup)
 async function handleAuth(e) {
     e.preventDefault();
     
@@ -67,12 +59,13 @@ async function handleAuth(e) {
     authMessage.className = '';
     
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Coba login terlebih dahulu
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
             email,
             password
         });
         
-        if (error) {
+        if (loginError) {
             // Jika login gagal, coba sign up
             const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                 email,
@@ -83,11 +76,12 @@ async function handleAuth(e) {
                 throw signUpError;
             }
             
-            authMessage.textContent = 'Akun berhasil dibuat! Silahkan login.';
+            authMessage.textContent = 'Akun berhasil dibuat! Silahkan cek email Anda untuk konfirmasi, atau langsung login.';
             authMessage.className = 'success';
-            isSignUp = true;
+            authForm.reset();
         } else {
-            currentUser = data.session.user;
+            // Login berhasil
+            currentUser = loginData.session.user;
             authMessage.textContent = 'Login berhasil!';
             authMessage.className = 'success';
             showApp();
@@ -95,6 +89,7 @@ async function handleAuth(e) {
             authForm.reset();
         }
     } catch (error) {
+        console.error('Auth error:', error);
         authMessage.textContent = 'Error: ' + error.message;
         authMessage.className = 'error';
     }
@@ -102,13 +97,20 @@ async function handleAuth(e) {
 
 // Handle logout
 async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Logout error:', error);
+            authMessage.textContent = 'Error logout: ' + error.message;
+            authMessage.className = 'error';
+        } else {
+            currentUser = null;
+            showAuth();
+            authForm.reset();
+            authMessage.textContent = '';
+        }
+    } catch (error) {
         console.error('Logout error:', error);
-    } else {
-        currentUser = null;
-        showAuth();
-        authForm.reset();
     }
 }
 
@@ -130,14 +132,13 @@ function showApp() {
 // Load children data
 async function loadChildren() {
     try {
-        // Ganti 'children' dengan nama tabel Anda di Supabase
         const { data, error } = await supabase
             .from('children')
             .select('*')
             .eq('parent_id', currentUser.id);
         
         if (error) {
-            console.warn('Tabel children belum ada. Silahkan buat di Supabase dashboard.');
+            console.warn('Tabel children belum ada atau RLS policy belum dikonfigurasi:', error);
             childrenList.innerHTML = '<p style="color: #999;">Belum ada data anak.</p>';
             return;
         }
@@ -148,16 +149,18 @@ async function loadChildren() {
             childrenList.innerHTML = data.map(child => `
                 <div class="child-item">
                     <h3>${child.name}</h3>
-                    <p>Umur: ${child.age} tahun</p>
+                    <p>Umur: ${child.age || 'Belum diisi'} tahun</p>
+                    <p>Lahir: ${child.birth_date || 'Belum diisi'}</p>
                 </div>
             `).join('');
         }
     } catch (error) {
         console.error('Error loading children:', error);
+        childrenList.innerHTML = '<p style="color: red;">Error loading data: ' + error.message + '</p>';
     }
 }
 
-// Listen for auth changes
+// Listen for auth state changes
 supabase.auth.onAuthStateChanged((event, session) => {
     if (event === 'SIGNED_IN') {
         currentUser = session.user;
