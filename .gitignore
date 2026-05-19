@@ -1,24 +1,12 @@
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# IDE
+```
+node_modules/
+*.log
+*.tmp
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Node modules (jika menggunakan)
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Build output
+.env
+.env.local
+.env.*
 dist/
 build/
-
-# Logs
-*.log
+```
